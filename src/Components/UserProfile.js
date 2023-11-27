@@ -13,16 +13,24 @@ const UserProfile = () => {
   const [clockRunning, setClockRunning] = useState(true);
   const [countries, setCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState('UTC');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`https://jsonplaceholder.typicode.com/users/${id}`)
-      .then(response => setUser(response.data))
-      .catch(error => console.error('Error fetching user details:', error));
+    const fetchData = async () => {
+      try {
+        const userResponse = await axios.get(`https://jsonplaceholder.typicode.com/users/${id}`);
+        setUser(userResponse.data);
 
-    // Fetch the list of countries
-    axios.get('http://worldtimeapi.org/api/timezone')
-      .then(response => setCountries(response.data))
-      .catch(error => console.error('Error fetching countries:', error));
+        const countriesResponse = await axios.get('http://worldtimeapi.org/api/timezone');
+        setCountries(countriesResponse.data);
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
 
     const intervalId = setInterval(() => {
       if (clockRunning) {
@@ -39,12 +47,16 @@ const UserProfile = () => {
     setSelectedCountry(event.target.value);
   };
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div>
       <h1>{user.name}'s Profile</h1>
       <div className='top-div'>
-      <button className='button'><Link to="/">Back</Link></button>
-      <Clock
+        <button className='button'><Link to="/">Back</Link></button>
+        <Clock
           clock={clock}
           running={clockRunning}
           toggleClock={toggleClock}
@@ -52,7 +64,7 @@ const UserProfile = () => {
           selectedCountry={selectedCountry}
           handleCountryChange={handleCountryChange}
         />
-        </div>
+      </div>
       <UserDetails user={user} />
       <PostList userId={user.id} />
     </div>
